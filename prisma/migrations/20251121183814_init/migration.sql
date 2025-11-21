@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "role" TEXT NOT NULL DEFAULT 'USER',
+ADD COLUMN     "status" TEXT NOT NULL DEFAULT 'PENDING',
+ADD COLUMN     "tempPassword" TEXT;
