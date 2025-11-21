@@ -3,19 +3,13 @@ import prisma from '@services/prisma.service';
 
 class UsersController {
     
+    // GET /api/users
     public static async listUsers(req: Request, res: Response): Promise<Response> {
         try {
             const users = await prisma.user.findMany({
                 select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                    role: true,
-                    status: true,
-                    createdAt: true,
-                    _count: {
-                        select: { projects: true } 
-                    }
+                    id: true, name: true, email: true, role: true, status: true, tempPassword: true, createdAt: true,
+                    _count: { select: { projects: true } }
                 },
                 orderBy: { createdAt: 'desc' }
             });
@@ -25,6 +19,25 @@ class UsersController {
         }
     }
 
+    // NOVO: PUT /api/users/:id - Atualizar dados do usuário (Ex: Cargo)
+    public static async updateUser(req: Request, res: Response): Promise<Response> {
+        const { id } = req.params;
+        const { role, status, name, email } = req.body;
+
+        try {
+            const updatedUser = await prisma.user.update({
+                where: { id },
+                data: { role, status, name, email }
+            });
+            // Removemos a senha do retorno por segurança
+            const { password, ...userWithoutPassword } = updatedUser;
+            return res.status(200).json(userWithoutPassword);
+        } catch (error) {
+            return res.status(500).json({ error: 'Erro ao atualizar usuário.' });
+        }
+    }
+
+    // DELETE /api/users/:id
     public static async deleteUser(req: Request, res: Response): Promise<Response> {
         const { id } = req.params;
         try {
