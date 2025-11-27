@@ -1,9 +1,15 @@
 import { Request, Response } from 'express';
 import prisma from '@services/prisma.service'; 
 
+// AQUI ESTÁ O SEGREDO: Instruímos o Prisma a trazer os dados relacionados
 const projectInclude = {
     modules: true,
-    infrastructure: true, // Importante: Traz os cards de infra
+    infrastructure: true,
+    // Traz o cronograma ordenado por data de início
+    timeline: { 
+        // CORREÇÃO: Adicionado 'as const' para o TypeScript entender que é o literal 'asc' e não uma string qualquer
+        orderBy: { startDate: 'asc' as const } 
+    },
     client: true,
     createdBy: {
         select: { id: true, name: true, email: true }
@@ -29,7 +35,7 @@ class ProjectsController {
         try {
             const project = await prisma.project.findUnique({
                 where: { id },
-                include: projectInclude
+                include: projectInclude // Usa a configuração que inclui a timeline
             });
             if (!project) return res.status(404).json({ error: 'Projeto não encontrado.' });
             return res.status(200).json(project);
@@ -80,7 +86,7 @@ class ProjectsController {
 
     public static async updateProject(req: Request, res: Response): Promise<Response> {
         const { id } = req.params;
-        const { title, status, infraDetails, documentation } = req.body;
+        const { title, status, infraDetails, documentation, clientId } = req.body;
 
         try {
             const updatedProject = await prisma.project.update({
@@ -89,7 +95,8 @@ class ProjectsController {
                     title, 
                     status, 
                     infraDetails,
-                    documentation 
+                    documentation,
+                    clientId
                 },
                 include: projectInclude
             });
