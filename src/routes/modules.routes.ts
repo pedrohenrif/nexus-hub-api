@@ -5,6 +5,6 @@ const router = Router();
 
 router.post('/', ModulesController.createModule);
 router.delete('/:id', ModulesController.deleteModule);
-router.delete('/:id', ModulesController.updateModule);
+router.put('/:id', ModulesController.updateModule);
 
 export default router;
