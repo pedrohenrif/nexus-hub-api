@@ -2,7 +2,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Configuração do banco de dados (usando SQLite no .env por padrão)
 datasource db {
   provider = "postgresql" 
   url      = env("DATABASE_URL")
@@ -14,16 +13,19 @@ model User {
   name            String
   email           String   @unique
   password        String
-  
+   
   role            String   @default("USER")  
   status          String   @default("PENDING") 
-  
+   
   tempPassword    String? 
 
-  projects        Project[]
+  projects        Project[] @relation("ProjectCreator")
+
+  memberOf        Project[] @relation("ProjectMembers") 
+
   modules         Module[]
   infrastructure  InfrastructureItem[]
-  
+   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
@@ -41,20 +43,21 @@ model Project {
   id              String    @id @default(uuid())
   title           String
   status          String   @default("Em Andamento")
-  
-  infraDetails    String? 
-
-  documentation   String?
+   
+  infraDetails    String?  
+  documentation   String?  
 
   clientId        String
   client          Client    @relation(fields: [clientId], references: [id])
-  
+   
   createdByUserId String?
-  createdBy       User?     @relation(fields: [createdByUserId], references: [id])
-  
+  createdBy       User?     @relation("ProjectCreator", fields: [createdByUserId], references: [id])
+   
+  members         User[]    @relation("ProjectMembers") // <--- ADICIONADO
+   
   modules         Module[]
   infrastructure  InfrastructureItem[] 
-  
+   
   timeline        TimelinePhase[]
 
   createdAt       DateTime @default(now())
@@ -70,10 +73,11 @@ model Module {
   repoUrl         String? 
   installCmd      String? 
   infraDetails    String? 
+  healthUrl       String?
 
   projectId       String
   project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  
+   
   createdByUserId String?
   createdBy       User?     @relation(fields: [createdByUserId], references: [id])
 
@@ -83,11 +87,11 @@ model Module {
 
 model InfrastructureItem {
   id              String   @id @default(uuid())
-  
-  category        String   // Ex: 'Server', 'Database', 'Security', 'Network'
-  name            String   // Ex: 'Servidor de Prod', 'AWS RDS'
-  value           String   // Ex: '192.168.0.1', 'Link do painel', 'String de conexão'
-  
+   
+  category        String   
+  name            String  
+  value           String  
+   
   projectId       String
   project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
@@ -100,15 +104,14 @@ model InfrastructureItem {
 
 model TimelinePhase {
   id             String   @id @default(uuid())
-  
+   
   name           String   
   status         String   @default("Pendente") 
   startDate      DateTime?
   endDate        DateTime?
-  
-  // NOVO CAMPO: Horas estimadas para esta fase
+   
   estimatedHours Int?     @default(0)
-  
+   
   projectId      String
   project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 

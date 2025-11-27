@@ -1,8 +1,31 @@
 import { Request, Response } from 'express';
 import prisma from '@services/prisma.service'; 
 
+
 class TimelineController {
     
+    public static async getGlobalTimeline(req: Request, res: Response): Promise<Response> {
+        try {
+            const projects = await prisma.project.findMany({
+                select: {
+                    id: true,
+                    title: true,
+                    status: true,
+                    client: { select: { name: true } },
+                    members: { select: { id: true, name: true } }, // Traz os responsáveis
+                    timeline: {
+                        orderBy: { startDate: 'asc' }
+                    }
+                },
+                // Ordena por cliente para agrupar visualmente
+                orderBy: { client: { name: 'asc' } }
+            });
+            return res.json(projects);
+        } catch (error) {
+            return res.status(500).json({ error: 'Erro ao buscar cronograma global.' });
+        }
+    }
+
     // POST /api/timeline
     public static async createPhase(req: Request, res: Response): Promise<Response> {
         // Adicionado estimatedHours na desestruturação

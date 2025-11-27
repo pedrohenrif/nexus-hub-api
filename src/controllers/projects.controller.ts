@@ -1,18 +1,18 @@
 import { Request, Response } from 'express';
 import prisma from '@services/prisma.service'; 
 
-// AQUI ESTÁ O SEGREDO: Instruímos o Prisma a trazer os dados relacionados
 const projectInclude = {
     modules: true,
     infrastructure: true,
-    // Traz o cronograma ordenado por data de início
     timeline: { 
-        // CORREÇÃO: Adicionado 'as const' para o TypeScript entender que é o literal 'asc' e não uma string qualquer
         orderBy: { startDate: 'asc' as const } 
     },
     client: true,
     createdBy: {
         select: { id: true, name: true, email: true }
+    },
+    members: { // <--- NOVO: Incluindo membros na resposta
+        select: { id: true, name: true, email: true, role: true } 
     }
 };
 
@@ -35,7 +35,7 @@ class ProjectsController {
         try {
             const project = await prisma.project.findUnique({
                 where: { id },
-                include: projectInclude // Usa a configuração que inclui a timeline
+                include: projectInclude
             });
             if (!project) return res.status(404).json({ error: 'Projeto não encontrado.' });
             return res.status(200).json(project);
@@ -69,6 +69,10 @@ class ProjectsController {
                     status,
                     clientId,
                     createdByUserId,
+                    // Adiciona o criador como membro automaticamente
+                    members: {
+                        connect: { id: createdByUserId }
+                    },
                     modules: {
                         create: modules.map((m: any) => ({
                             type: m.type, name: m.name, description: m.description, techStack: m.techStack, repoUrl: m.repoUrl, installCmd: m.installCmd, infraDetails: m.infraDetails, createdByUserId
@@ -91,18 +95,11 @@ class ProjectsController {
         try {
             const updatedProject = await prisma.project.update({
                 where: { id },
-                data: { 
-                    title, 
-                    status, 
-                    infraDetails,
-                    documentation,
-                    clientId
-                },
+                data: { title, status, infraDetails, documentation, clientId },
                 include: projectInclude
             });
             return res.status(200).json(updatedProject);
         } catch (error) {
-            console.error(error);
             return res.status(500).json({ error: 'Erro ao atualizar projeto.' });
         }
     }
@@ -114,6 +111,48 @@ class ProjectsController {
             return res.status(204).send(); 
         } catch (error) {
             return res.status(500).json({ error: "Erro ao excluir projeto." });
+        }
+    }
+
+    // --- GESTÃO DE MEMBROS ---
+
+    // POST /api/projects/:id/members
+    public static async addMember(req: Request, res: Response): Promise<Response> {
+        const { id } = req.params;
+        const { userId } = req.body;
+
+        try {
+            const project = await prisma.project.update({
+                where: { id },
+                data: {
+                    members: {
+                        connect: { id: userId } // Conecta um usuário existente pelo ID
+                    }
+                },
+                include: projectInclude
+            });
+            return res.json(project);
+        } catch (error) {
+            return res.status(500).json({ error: 'Erro ao adicionar membro.' });
+        }
+    }
+
+    // DELETE /api/projects/:id/members/:userId
+    public static async removeMember(req: Request, res: Response): Promise<Response> {
+        const { id, userId } = req.params;
+
+        try {
+            await prisma.project.update({
+                where: { id },
+                data: {
+                    members: {
+                        disconnect: { id: userId } // Desconecta o usuário da lista de membros
+                    }
+                }
+            });
+            return res.status(204).send();
+        } catch (error) {
+            return res.status(500).json({ error: 'Erro ao remover membro.' });
         }
     }
 }
