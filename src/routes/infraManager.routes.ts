@@ -5,6 +5,7 @@ const router = Router();
 
 // Servidores
 router.get('/servers', InfraManagerController.listServers);
+router.get('/servers/:id', InfraManagerController.getServerById);
 router.post('/servers', InfraManagerController.createServer);
 router.put('/servers/:id', InfraManagerController.updateServer);
 router.delete('/servers/:id', InfraManagerController.deleteServer);

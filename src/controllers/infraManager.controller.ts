@@ -32,6 +32,32 @@ class InfraManagerController {
         }
     }
 
+    public static async getServerById(req: Request, res: Response): Promise<Response> {
+        const { id } = req.params;
+        try {
+            const server = await prisma.server.findUnique({
+                where: { id },
+                include: { environments: true }
+            });
+
+            if (!server) return res.status(404).json({ error: 'Servidor não encontrado.' });
+
+            // Descriptografa
+            const decryptedServer = {
+                ...server,
+                password: decrypt(server.password),
+                environments: server.environments.map(env => ({
+                    ...env,
+                    accessPassword: env.accessPassword ? decrypt(env.accessPassword) : null
+                }))
+            };
+
+            return res.status(200).json(decryptedServer);
+        } catch (error) {
+            return res.status(500).json({ error: 'Erro ao buscar servidor.' });
+        }
+    }
+
     // POST /api/infra-manager/servers
     public static async createServer(req: Request, res: Response): Promise<Response> {
         const { name, ipAddress, username, password, notes } = req.body;
