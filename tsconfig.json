@@ -17,6 +17,7 @@
       "@routes/*": ["src/routes/*"],
       "@services/*": ["src/services/*"],
       "@utils/*": ["src/utils/*"],
+      "@middleware/*": ["src/middleware/*"],
       "@prisma-config/*": ["prisma/config/*"]
     }
   },

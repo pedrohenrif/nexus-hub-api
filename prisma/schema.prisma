@@ -118,3 +118,34 @@ model TimelinePhase {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
+
+model Server {
+  id          String   @id @default(uuid())
+  name        String   // Nome do Servidor
+  ipAddress   String   // IP ou Link
+  username    String   // Login
+  password    String   // Senha do servidor
+  notes       String?  // Observação
+
+  environments ServerEnvironment[] // Relação com os ambientes
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ServerEnvironment {
+  id             String   @id @default(uuid())
+  name           String   // Nome do ambiente (Ex: Homologação, Produção)
+  
+  accessType     String   // Varchar: Anydesk, TeamViewer, SSH, VPN, etc.
+  accessId       String   // ID de conexão
+  accessPassword String?  // Senha do ambiente
+  hasFixedIp     Boolean  @default(false) // Se usa IP fixo
+  notes          String?  // Observação
+  
+  serverId       String
+  server         Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
