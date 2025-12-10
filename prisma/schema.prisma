@@ -53,12 +53,14 @@ model Project {
   createdByUserId String?
   createdBy       User?     @relation("ProjectCreator", fields: [createdByUserId], references: [id])
    
-  members         User[]    @relation("ProjectMembers") // <--- ADICIONADO
+  members         User[]    @relation("ProjectMembers")
    
   modules         Module[]
   infrastructure  InfrastructureItem[] 
    
   timeline        TimelinePhase[]
+  
+  serverEnvironments ServerEnvironment[] 
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -142,6 +144,16 @@ model ServerEnvironment {
   accessPassword String?  // Senha do ambiente
   hasFixedIp     Boolean  @default(false) // Se usa IP fixo
   notes          String?  // Observação
+
+  isActive       Boolean  @default(true)   
+  isOnPremise    Boolean  @default(false)  
+  
+  vCPU           String?  
+  ram            String?  
+  storage        String?  
+  os             String?  
+
+  projects       Project[]
   
   serverId       String
   server         Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
