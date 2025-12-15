@@ -8,18 +8,36 @@ class UsersController {
         try {
             const users = await prisma.user.findMany({
                 select: {
-                    id: true, name: true, email: true, role: true, status: true, tempPassword: true, createdAt: true,
-                    _count: { select: { projects: true } }
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                    status: true,
+                    tempPassword: true,
+                    createdAt: true,
+                    _count: {
+                        select: { 
+                            projectsCreated: true,
+                            memberOf: true 
+                        } 
+                    }
                 },
                 orderBy: { createdAt: 'desc' }
             });
-            return res.status(200).json(users);
+            
+            const formattedUsers = users.map(user => ({
+                ...user,
+                _count: {
+                    projects: user._count.projectsCreated + user._count.memberOf
+                }
+            }));
+
+            return res.status(200).json(formattedUsers);
         } catch (error) {
             return res.status(500).json({ error: 'Erro ao buscar usuários.' });
         }
     }
 
-    // NOVO: PUT /api/users/:id - Atualizar dados do usuário (Ex: Cargo)
     public static async updateUser(req: Request, res: Response): Promise<Response> {
         const { id } = req.params;
         const { role, status, name, email } = req.body;
@@ -29,7 +47,6 @@ class UsersController {
                 where: { id },
                 data: { role, status, name, email }
             });
-            // Removemos a senha do retorno por segurança
             const { password, ...userWithoutPassword } = updatedUser;
             return res.status(200).json(userWithoutPassword);
         } catch (error) {

@@ -13,19 +13,17 @@ model User {
   name            String
   email           String   @unique
   password        String
-   
-  role            String   @default("USER")  
-  status          String   @default("PENDING") 
-   
-  tempPassword    String? 
+  role            String   @default("USER")
+  status          String   @default("PENDING")
+  tempPassword    String?
 
-  projects        Project[] @relation("ProjectCreator")
-
+  projectsCreated Project[] @relation("ProjectCreator") 
+  projectsOwned   Project[] @relation("ProjectOwner") 
   memberOf        Project[] @relation("ProjectMembers") 
 
   modules         Module[]
   infrastructure  InfrastructureItem[]
-   
+  
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
@@ -42,24 +40,27 @@ model Client {
 model Project {
   id              String    @id @default(uuid())
   title           String
-  status          String   @default("Em Andamento")
-   
+  status          String    @default("Em Andamento")
+  type            String    @default("Projeto")
+
   infraDetails    String?  
   documentation   String?  
 
   clientId        String
   client          Client    @relation(fields: [clientId], references: [id])
-   
+  
   createdByUserId String?
   createdBy       User?     @relation("ProjectCreator", fields: [createdByUserId], references: [id])
-   
+  
+  ownerId         String?
+  owner           User?     @relation("ProjectOwner", fields: [ownerId], references: [id])
+  
   members         User[]    @relation("ProjectMembers")
-   
+  
   modules         Module[]
   infrastructure  InfrastructureItem[] 
-   
   timeline        TimelinePhase[]
-  
+
   serverEnvironments ServerEnvironment[] 
 
   createdAt       DateTime @default(now())
